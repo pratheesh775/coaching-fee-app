@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dist-electron/
+release/
+out/
+*.db
+*.db-shm
+*.db-wal
+.env
+main.js
+test-*.js
+src/main/electron.d.ts

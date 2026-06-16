@@ -1,0 +1,198 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    font-size: 14px;
+    background-color: #eff1f5;
+    color: #1a2740;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #b8c2d0;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #7a8698;
+  }
+}
+
+@layer components {
+  /* ─── Card ─────────────────────────────────────────────── */
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-5;
+  }
+
+  /* ─── Stat Card ─────────────────────────────────────────── */
+  .stat-card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4;
+  }
+
+  .stat-icon {
+    @apply w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0;
+  }
+
+  /* ─── Buttons ───────────────────────────────────────────── */
+  .btn {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 cursor-pointer border-0 outline-none;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary text-white hover:bg-primary-dark active:scale-95 shadow-sm;
+  }
+
+  .btn-secondary {
+    @apply btn bg-gray-100 text-gray-700 hover:bg-gray-200 active:scale-95;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-500 text-white hover:bg-red-600 active:scale-95;
+  }
+
+  .btn-success {
+    @apply btn bg-success text-white hover:bg-green-700 active:scale-95 shadow-sm;
+  }
+
+  .btn-outline {
+    @apply btn border border-gray-200 text-gray-700 hover:bg-gray-50 active:scale-95;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  /* ─── Form Controls ─────────────────────────────────────── */
+  .form-label {
+    @apply block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5;
+  }
+
+  .form-input {
+    @apply w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-800
+           placeholder-gray-400 outline-none transition-all duration-150
+           focus:border-primary focus:ring-2 focus:ring-primary/10;
+  }
+
+  .form-select {
+    @apply form-input appearance-none cursor-pointer;
+  }
+
+  .form-group {
+    @apply flex flex-col gap-1;
+  }
+
+  /* ─── Badge / Status ─────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold;
+  }
+
+  .badge-success {
+    @apply badge bg-green-50 text-green-700;
+  }
+
+  .badge-warning {
+    @apply badge bg-yellow-50 text-yellow-700;
+  }
+
+  .badge-danger {
+    @apply badge bg-red-50 text-red-600;
+  }
+
+  .badge-info {
+    @apply badge bg-blue-50 text-blue-700;
+  }
+
+  .badge-gray {
+    @apply badge bg-gray-100 text-gray-600;
+  }
+
+  /* ─── Table ─────────────────────────────────────────────── */
+  .data-table {
+    @apply w-full border-collapse;
+  }
+
+  .data-table th {
+    @apply px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide
+           bg-gray-50 border-b border-gray-100;
+  }
+
+  .data-table td {
+    @apply px-4 py-3.5 text-sm text-gray-700 border-b border-gray-50;
+  }
+
+  .data-table tr:hover td {
+    @apply bg-blue-50/30;
+  }
+
+  /* ─── Page Header ─────────────────────────────────────────── */
+  .page-header {
+    @apply flex items-center justify-between mb-6;
+  }
+
+  .page-title {
+    @apply text-xl font-bold text-navy;
+  }
+
+  .page-subtitle {
+    @apply text-sm text-gray-500 mt-0.5;
+  }
+
+  /* ─── Search Input ─────────────────────────────────────────── */
+  .search-input {
+    @apply form-input pl-9 pr-4 w-64;
+  }
+
+  /* ─── Sidebar Nav Item ─────────────────────────────────────── */
+  .nav-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+           text-sidebar-text transition-all duration-150 cursor-pointer mx-2;
+  }
+
+  .nav-item:hover {
+    @apply bg-sidebar-hover text-white;
+  }
+
+  .nav-item.active {
+    @apply bg-primary text-white shadow-sm;
+  }
+
+  /* ─── Modal ─────────────────────────────────────────────────── */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4;
+  }
+
+  .modal {
+    @apply bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden;
+  }
+
+  .modal-header {
+    @apply flex items-center justify-between px-6 py-4 border-b border-gray-100;
+  }
+
+  .modal-body {
+    @apply px-6 py-5 max-h-[70vh] overflow-y-auto;
+  }
+
+  .modal-footer {
+    @apply flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50;
+  }
+}
