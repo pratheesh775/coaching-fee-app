@@ -10,6 +10,8 @@ export default function App() {
   const [state, setState] = useState<AppState>('loading')
   const [isFirstRun, setIsFirstRun] = useState(false)
   const [currentUser, setCurrentUser] = useState('')
+  const [authKey, setAuthKey] = useState(0)
+  const [justLoggedOut, setJustLoggedOut] = useState(false)
 
   useEffect(() => {
     ;(async () => {
@@ -32,6 +34,8 @@ export default function App() {
   const handleLogout = () => {
     setCurrentUser('')
     setIsFirstRun(false)
+    setJustLoggedOut(true)
+    setAuthKey((k) => k + 1) // force AuthPage to remount fresh
     setState('auth')
   }
 
@@ -59,7 +63,14 @@ export default function App() {
   }
 
   if (state === 'auth') {
-    return <AuthPage isFirstRun={isFirstRun} onAuthenticated={handleAuthenticated} />
+    return (
+      <AuthPage
+        key={authKey}
+        isFirstRun={isFirstRun}
+        justLoggedOut={justLoggedOut}
+        onAuthenticated={(u) => { setJustLoggedOut(false); handleAuthenticated(u) }}
+      />
+    )
   }
 
   if (state === 'setup') {

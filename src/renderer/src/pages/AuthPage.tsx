@@ -1,14 +1,15 @@
 import { useState } from 'react'
-import { GraduationCap, Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { GraduationCap, Eye, EyeOff, AlertCircle, CheckCircle2, LogOut } from 'lucide-react'
 
 type AuthMode = 'login' | 'register' | 'forgot' | 'reset'
 
 interface Props {
   isFirstRun: boolean
+  justLoggedOut?: boolean
   onAuthenticated: (username: string) => void
 }
 
-export default function AuthPage({ isFirstRun, onAuthenticated }: Props) {
+export default function AuthPage({ isFirstRun, justLoggedOut, onAuthenticated }: Props) {
   const [mode, setMode] = useState<AuthMode>(isFirstRun ? 'register' : 'login')
   const [showPwd, setShowPwd] = useState(false)
   const [error, setError] = useState('')
@@ -114,6 +115,12 @@ export default function AuthPage({ isFirstRun, onAuthenticated }: Props) {
           {mode === 'login' && (
             <>
               <h2 className="text-xl font-bold text-navy mb-6">Welcome Back</h2>
+              {justLoggedOut && (
+                <div className="flex items-center gap-2 bg-blue-50 text-blue-700 text-sm px-4 py-3 rounded-xl mb-4">
+                  <LogOut size={15} className="flex-shrink-0" />
+                  You have been logged out successfully.
+                </div>
+              )}
               {error && <ErrorBanner msg={error} />}
               {success && <SuccessBanner msg={success} />}
               <form onSubmit={handleLogin} className="flex flex-col gap-4">
