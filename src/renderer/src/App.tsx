@@ -29,6 +29,12 @@ export default function App() {
 
   const handleSetupComplete = () => setState('app')
 
+  const handleLogout = () => {
+    setCurrentUser('')
+    setIsFirstRun(false)
+    setState('auth')
+  }
+
   const handleLicenseActivated = async () => {
     const has = await window.api.auth.hasUsers()
     if (!has) setIsFirstRun(true)
@@ -60,5 +66,5 @@ export default function App() {
     return <SetupScreen onComplete={handleSetupComplete} />
   }
 
-  return <AppShell currentUser={currentUser} />
+  return <AppShell currentUser={currentUser} onLogout={handleLogout} />
 }

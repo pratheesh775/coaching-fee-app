@@ -17,9 +17,10 @@ export type PageKey =
 
 interface Props {
   currentUser: string
+  onLogout: () => void
 }
 
-export default function AppShell({ currentUser }: Props) {
+export default function AppShell({ currentUser, onLogout }: Props) {
   const [page, setPage] = useState<PageKey>('dashboard')
   const [collapsed, setCollapsed] = useState(false)
   const [collectForStudent, setCollectForStudent] = useState<number | null>(null)
@@ -33,7 +34,8 @@ export default function AppShell({ currentUser }: Props) {
     <div className="h-full flex bg-body">
       <Sidebar activePage={page} onNavigate={(p) => { setPage(p); setCollectForStudent(null) }} collapsed={collapsed} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Header page={page} onToggleSidebar={() => setCollapsed((c) => !c)} currentUser={currentUser} />
+        <Header page={page} onToggleSidebar={() => setCollapsed((c) => !c)} currentUser={currentUser}
+          onNavigate={(p) => { setPage(p); setCollectForStudent(null) }} onLogout={onLogout} />
         <main className="flex-1 overflow-y-auto p-6">
           {page === 'dashboard' && <Dashboard onNavigate={setPage} />}
           {page === 'students' && <StudentsPage onCollectFee={navigateToFees} />}
