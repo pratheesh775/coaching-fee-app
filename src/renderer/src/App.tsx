@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import AppShell from './components/layout/AppShell'
 import SetupScreen from './pages/SetupScreen'
 import AuthPage from './pages/AuthPage'
+import LicensePage from './pages/LicensePage'
 
-type AppState = 'loading' | 'auth' | 'setup' | 'app'
+type AppState = 'loading' | 'license' | 'auth' | 'setup' | 'app'
 
 export default function App() {
   const [state, setState] = useState<AppState>('loading')
@@ -11,14 +12,13 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState('')
 
   useEffect(() => {
-    window.api.auth.hasUsers().then((has) => {
-      if (!has) {
-        setIsFirstRun(true)
-        setState('auth')
-      } else {
-        setState('auth')
-      }
-    })
+    ;(async () => {
+      const lic = await window.api.license.check()
+      if (!lic.activated) { setState('license'); return }
+      const has = await window.api.auth.hasUsers()
+      if (!has) setIsFirstRun(true)
+      setState('auth')
+    })()
   }, [])
 
   const handleAuthenticated = async (username: string) => {
@@ -28,6 +28,12 @@ export default function App() {
   }
 
   const handleSetupComplete = () => setState('app')
+
+  const handleLicenseActivated = async () => {
+    const has = await window.api.auth.hasUsers()
+    if (!has) setIsFirstRun(true)
+    setState('auth')
+  }
 
   if (state === 'loading') {
     return (
@@ -40,6 +46,10 @@ export default function App() {
         </div>
       </div>
     )
+  }
+
+  if (state === 'license') {
+    return <LicensePage onActivated={handleLicenseActivated} />
   }
 
   if (state === 'auth') {

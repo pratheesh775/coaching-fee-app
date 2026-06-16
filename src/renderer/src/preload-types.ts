@@ -1,4 +1,8 @@
 export interface ElectronAPI {
+  license: {
+    check: () => Promise<{ activated: boolean; key?: string; activated_at?: string }>
+    activate: (key: string) => Promise<{ ok: boolean; error?: string }>
+  }
   auth: {
     hasUsers: () => Promise<boolean>
     register: (data: Record<string, string>) => Promise<{ ok: boolean; error?: string }>

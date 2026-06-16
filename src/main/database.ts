@@ -2,7 +2,16 @@ import Database from 'better-sqlite3'
 import { app } from 'electron'
 import { join } from 'path'
 import { mkdirSync } from 'fs'
-import { createHash } from 'crypto'
+import { createHash, createHmac } from 'crypto'
+
+const LICENSE_SECRET = 'tbs-fma-2024@coaching-hga'
+
+export function isValidLicenseKey(key: string): boolean {
+  const match = key.toUpperCase().match(/^([0-9A-Z]{4})-HGA-AS$/)
+  if (!match) return false
+  const hash = createHmac('sha256', LICENSE_SECRET).update(match[1]).digest('hex')
+  return hash[0] === 'a'
+}
 
 let db: Database.Database
 
@@ -154,6 +163,12 @@ function runMigrations(): void {
       category TEXT,
       expense_date TEXT NOT NULL,
       created_at TEXT DEFAULT (datetime('now','localtime'))
+    );
+
+    CREATE TABLE IF NOT EXISTS license (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      key TEXT NOT NULL,
+      activated_at TEXT NOT NULL
     );
   `)
 

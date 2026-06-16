@@ -1,6 +1,10 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
 const api = {
+  license: {
+    check: () => ipcRenderer.invoke('license:check'),
+    activate: (key: string) => ipcRenderer.invoke('license:activate', key)
+  },
   auth: {
     hasUsers: () => ipcRenderer.invoke('auth:has-users'),
     register: (data: unknown) => ipcRenderer.invoke('auth:register', data),

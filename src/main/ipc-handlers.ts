@@ -1,5 +1,5 @@
 import { ipcMain, app } from 'electron'
-import { getDb, hashPassword } from './database'
+import { getDb, hashPassword, isValidLicenseKey } from './database'
 
 function localDate(): string {
   const d = new Date()
@@ -560,4 +560,20 @@ export function registerHandlers(): void {
 
   ipcMain.handle('app:version', () => app.getVersion())
   ipcMain.handle('app:data-path', () => app.getPath('userData'))
+
+  // ─── License ──────────────────────────────────────────────────────────────
+  ipcMain.handle('license:check', () => {
+    const row = getDb().prepare('SELECT key, activated_at FROM license WHERE id=1').get() as { key: string; activated_at: string } | undefined
+    return { activated: !!row, key: row?.key, activated_at: row?.activated_at }
+  })
+
+  ipcMain.handle('license:activate', (_e, key: string) => {
+    const clean = key.toUpperCase().trim()
+    if (!isValidLicenseKey(clean)) return { ok: false, error: 'Invalid license key. Please check and try again.' }
+    const existing = getDb().prepare('SELECT id FROM license WHERE id=1').get()
+    if (existing) return { ok: false, error: 'A license key is already activated on this device.' }
+    const now = localDate()
+    getDb().prepare('INSERT INTO license (id, key, activated_at) VALUES (1, ?, ?)').run(clean, now)
+    return { ok: true }
+  })
 }
