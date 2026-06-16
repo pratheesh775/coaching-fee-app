@@ -8,11 +8,12 @@ import ReportsPage from '../../pages/ReportsPage'
 import CoursesPage from '../../pages/CoursesPage'
 import BatchesPage from '../../pages/BatchesPage'
 import SubjectsPage from '../../pages/SubjectsPage'
+import AttendancePage from '../../pages/AttendancePage'
 import SettingsPage from '../../pages/SettingsPage'
 
 export type PageKey =
   | 'dashboard' | 'students' | 'fees' | 'reports'
-  | 'courses' | 'batches' | 'subjects' | 'settings'
+  | 'courses' | 'batches' | 'subjects' | 'attendance' | 'settings'
 
 interface Props {
   currentUser: string
@@ -41,6 +42,7 @@ export default function AppShell({ currentUser }: Props) {
           {page === 'courses' && <CoursesPage />}
           {page === 'batches' && <BatchesPage />}
           {page === 'subjects' && <SubjectsPage />}
+          {page === 'attendance' && <AttendancePage />}
           {page === 'settings' && <SettingsPage currentUser={currentUser} />}
         </main>
       </div>

@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, IndianRupee, BarChart3,
-  BookOpen, Clock, Settings, GraduationCap, Layers
+  BookOpen, Clock, Settings, GraduationCap, Layers, CalendarCheck
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import type { PageKey } from './AppShell'
@@ -20,6 +20,7 @@ const NAV: NavItem[] = [
   { key: 'courses', label: 'Courses', icon: <BookOpen size={18} /> },
   { key: 'batches', label: 'Batches', icon: <Clock size={18} /> },
   { key: 'subjects', label: 'Subjects', icon: <Layers size={18} /> },
+  { key: 'attendance', label: 'Attendance', icon: <CalendarCheck size={18} /> },
   { key: 'settings', label: 'Settings', icon: <Settings size={18} />, section: 'SYSTEM' }
 ]
 

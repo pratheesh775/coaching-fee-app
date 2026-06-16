@@ -395,23 +395,167 @@ export function registerHandlers(): void {
   })
 
   ipcMain.handle('reports:summary', () => {
+    const db = getDb()
     const today = localDate()
     const thisMonth = today.slice(0, 7)
-    const todayTotal = (getDb().prepare(
-      'SELECT COALESCE(SUM(total_paid), 0) as total FROM fee_payments WHERE payment_date = ?'
-    ).get(today) as { total: number }).total
-    const monthTotal = (getDb().prepare(
-      'SELECT COALESCE(SUM(total_paid), 0) as total FROM fee_payments WHERE payment_date LIKE ?'
-    ).get(`${thisMonth}%`) as { total: number }).total
-    const totalStudents = (getDb().prepare(
-      'SELECT COUNT(*) as c FROM students WHERE is_active = 1'
-    ).get() as { c: number }).c
-    const dueCount = (getDb().prepare(
-      `SELECT COUNT(DISTINCT s.id) as c FROM students s
-       LEFT JOIN batches b ON s.batch_id = b.id
-       WHERE s.is_active = 1 AND (b.status = 'active' OR b.status IS NULL OR s.batch_id IS NULL)`
-    ).get() as { c: number }).c
-    return { today_total: todayTotal, month_total: monthTotal, total_students: totalStudents, due_student_count: dueCount }
+    // Week start (Monday)
+    const now = new Date()
+    const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1
+    const weekStart = new Date(now); weekStart.setDate(now.getDate() - dayOfWeek)
+    const weekStartStr = `${weekStart.getFullYear()}-${String(weekStart.getMonth()+1).padStart(2,'0')}-${String(weekStart.getDate()).padStart(2,'0')}`
+
+    const todayTotal = (db.prepare('SELECT COALESCE(SUM(total_paid),0) as t FROM fee_payments WHERE payment_date=?').get(today) as any).t
+    const monthTotal = (db.prepare('SELECT COALESCE(SUM(total_paid),0) as t FROM fee_payments WHERE payment_date LIKE ?').get(`${thisMonth}%`) as any).t
+    const weekTotal = (db.prepare('SELECT COALESCE(SUM(total_paid),0) as t FROM fee_payments WHERE payment_date >= ?').get(weekStartStr) as any).t
+    const totalStudents = (db.prepare('SELECT COUNT(*) as c FROM students WHERE is_active=1').get() as any).c
+    const totalBatches = (db.prepare("SELECT COUNT(*) as c FROM batches WHERE is_active=1 AND status='active'").get() as any).c
+    const totalCourses = (db.prepare('SELECT COUNT(*) as c FROM courses WHERE is_active=1').get() as any).c
+    const totalSubjects = (db.prepare('SELECT COUNT(*) as c FROM subjects WHERE is_active=1').get() as any).c
+    return { today_total: todayTotal, month_total: monthTotal, week_total: weekTotal, total_students: totalStudents, total_batches: totalBatches, total_courses: totalCourses, total_subjects: totalSubjects }
+  })
+
+  // ─── Attendance ───────────────────────────────────────────────────────────
+  ipcMain.handle('attendance:get-week', (_e, batchId, weekStart) => {
+    const db = getDb()
+    // Students in batch
+    const students = db.prepare(
+      `SELECT id, name, student_id FROM students WHERE batch_id = ? AND is_active = 1 ORDER BY name`
+    ).all(batchId) as any[]
+
+    // Compute 7 dates from weekStart
+    const startDate = new Date(weekStart)
+    const dates: string[] = []
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(startDate)
+      d.setDate(startDate.getDate() + i)
+      dates.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`)
+    }
+
+    // Attendance records for these students/dates
+    const inClause = dates.map(() => '?').join(',')
+    const studentIds = students.map((s: any) => s.id)
+    const records: Record<number, Record<string, string>> = {}
+    if (studentIds.length > 0) {
+      const rows = db.prepare(
+        `SELECT student_id, date, status FROM attendance
+         WHERE date IN (${inClause}) AND batch_id = ?`
+      ).all(...dates, batchId) as any[]
+      rows.forEach((r: any) => {
+        if (!records[r.student_id]) records[r.student_id] = {}
+        records[r.student_id][r.date] = r.status
+      })
+    }
+
+    // Holidays for this week
+    const holidays = (db.prepare(
+      `SELECT date, name FROM holidays WHERE date IN (${inClause})`
+    ).all(...dates) as any[]).map((h: any) => ({ date: h.date, name: h.name }))
+
+    return { students, dates, records, holidays }
+  })
+
+  ipcMain.handle('attendance:mark', (_e, data) => {
+    const db = getDb()
+    const today = localDate()
+    const existing = db.prepare(
+      'SELECT id, status FROM attendance WHERE student_id = ? AND date = ?'
+    ).get(data.student_id, data.date) as any
+
+    if (existing) {
+      db.prepare(
+        'UPDATE attendance SET status=?, edit_comment=?, edited_at=? WHERE student_id=? AND date=?'
+      ).run(data.status, data.comment || null, today, data.student_id, data.date)
+    } else {
+      db.prepare(
+        'INSERT INTO attendance (student_id, batch_id, date, status) VALUES (?,?,?,?)'
+      ).run(data.student_id, data.batch_id, data.date, data.status)
+    }
+    return { ok: true }
+  })
+
+  ipcMain.handle('attendance:mark-all', (_e, batchId, date, status) => {
+    const db = getDb()
+    const students = db.prepare(
+      'SELECT id FROM students WHERE batch_id = ? AND is_active = 1'
+    ).all(batchId) as any[]
+    const stmt = db.prepare(
+      `INSERT INTO attendance (student_id, batch_id, date, status) VALUES (?,?,?,?)
+       ON CONFLICT(student_id, date) DO UPDATE SET status=excluded.status`
+    )
+    for (const s of students) stmt.run(s.id, batchId, date, status)
+    return { ok: true, count: students.length }
+  })
+
+  ipcMain.handle('attendance:report', (_e, batchId, fromDate, toDate) => {
+    const db = getDb()
+    const students = db.prepare(
+      'SELECT id, name, student_id FROM students WHERE batch_id = ? AND is_active = 1 ORDER BY name'
+    ).all(batchId) as any[]
+
+    // Get date range
+    const dates: string[] = []
+    const start = new Date(fromDate), end = new Date(toDate)
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      dates.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`)
+    }
+
+    const holidays = new Set((db.prepare(
+      `SELECT date FROM holidays WHERE date >= ? AND date <= ?`
+    ).all(fromDate, toDate) as any[]).map((h: any) => h.date))
+
+    return students.map((s: any) => {
+      const recs = db.prepare(
+        'SELECT date, status FROM attendance WHERE student_id = ? AND date >= ? AND date <= ?'
+      ).all(s.id, fromDate, toDate) as any[]
+      const byDate: Record<string, string> = {}
+      recs.forEach((r: any) => { byDate[r.date] = r.status })
+
+      let present = 0, absent = 0, leave = 0, holiday = 0
+      const row: Record<string, string | number> = { 'Name': s.name, 'Student ID': s.student_id }
+      dates.forEach((d) => {
+        if (holidays.has(d)) { row[d] = 'H'; holiday++ }
+        else { const st = byDate[d] || '—'; row[d] = st === 'present' ? 'P' : st === 'absent' ? 'A' : st === 'leave' ? 'L' : '—'; if (st==='present') present++; else if (st==='absent') absent++; else if (st==='leave') leave++ }
+      })
+      const total = present + absent + leave
+      row['Present'] = present; row['Absent'] = absent; row['Leave'] = leave; row['Holiday'] = holiday
+      row['Attendance %'] = total > 0 ? `${Math.round(present / total * 100)}%` : '—'
+      return row
+    })
+  })
+
+  // ─── Holidays ─────────────────────────────────────────────────────────────
+  ipcMain.handle('holidays:list', (_e, fromDate, toDate) => {
+    if (fromDate && toDate) {
+      return getDb().prepare('SELECT * FROM holidays WHERE date >= ? AND date <= ? ORDER BY date').all(fromDate, toDate)
+    }
+    return getDb().prepare('SELECT * FROM holidays ORDER BY date').all()
+  })
+
+  ipcMain.handle('holidays:add', (_e, date, name) => {
+    try {
+      getDb().prepare('INSERT INTO holidays (date, name) VALUES (?,?)').run(date, name)
+      return { ok: true }
+    } catch {
+      getDb().prepare('UPDATE holidays SET name=? WHERE date=?').run(name, date)
+      return { ok: true }
+    }
+  })
+
+  ipcMain.handle('holidays:delete', (_e, date) => {
+    getDb().prepare('DELETE FROM holidays WHERE date=?').run(date)
+    return { ok: true }
+  })
+
+  // ─── Enhanced Reports ─────────────────────────────────────────────────────
+  ipcMain.handle('reports:weekly-trend', () => {
+    const result: { date: string; total: number; label: string }[] = []
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i)
+      const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+      const total = (getDb().prepare('SELECT COALESCE(SUM(total_paid),0) as t FROM fee_payments WHERE payment_date=?').get(ds) as any).t
+      result.push({ date: ds, total, label: d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) })
+    }
+    return result
   })
 
   ipcMain.handle('app:version', () => app.getVersion())

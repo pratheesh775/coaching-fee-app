@@ -128,6 +128,25 @@ function runMigrations(): void {
       created_at TEXT DEFAULT (datetime('now','localtime'))
     );
 
+    CREATE TABLE IF NOT EXISTS attendance (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id INTEGER REFERENCES students(id),
+      batch_id INTEGER REFERENCES batches(id),
+      date TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'absent',
+      edit_comment TEXT,
+      edited_at TEXT,
+      created_at TEXT DEFAULT (datetime('now','localtime')),
+      UNIQUE(student_id, date)
+    );
+
+    CREATE TABLE IF NOT EXISTS holidays (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT NOT NULL UNIQUE,
+      name TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now','localtime'))
+    );
+
     CREATE TABLE IF NOT EXISTS expenses (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       description TEXT NOT NULL,

@@ -51,7 +51,8 @@
     },
     "files": [
       "dist-electron/**/*",
-      "dist/**/*"
+      "dist/**/*",
+      "resources/**/*"
     ],
     "win": {
       "target": [
@@ -62,14 +63,11 @@
           ]
         }
       ],
-      "icon": "resources/icon.ico"
+      "icon": "resources/icon.png"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "installerIcon": "resources/icon.ico",
-      "uninstallerIcon": "resources/icon.ico",
-      "installerHeaderIcon": "resources/icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Coaching Fee Manager"

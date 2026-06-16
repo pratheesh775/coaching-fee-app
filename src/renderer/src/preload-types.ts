@@ -51,8 +51,20 @@ export interface ElectronAPI {
     dueList: () => Promise<import('./types').Student[]>
     summary: () => Promise<import('./types').ReportSummary>
   }
+  attendance: {
+    getWeek: (batchId: number, weekStart: string) => Promise<import('./types').AttendanceWeek>
+    mark: (data: { student_id: number; batch_id: number | null; date: string; status: string; comment?: string }) => Promise<{ ok: boolean }>
+    markAll: (batchId: number, date: string, status: string) => Promise<{ ok: boolean }>
+    report: (batchId: number, fromDate: string, toDate: string) => Promise<Record<string, unknown>[]>
+  }
+  holidays: {
+    list: (fromDate?: string, toDate?: string) => Promise<import('./types').Holiday[]>
+    add: (date: string, name: string) => Promise<{ ok: boolean }>
+    delete: (date: string) => Promise<{ ok: boolean }>
+  }
   app: {
     version: () => Promise<string>
     dataPath: () => Promise<string>
+    weeklyTrend: () => Promise<{ date: string; total: number; label: string }[]>
   }
 }

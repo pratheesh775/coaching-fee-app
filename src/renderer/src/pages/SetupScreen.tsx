@@ -148,7 +148,7 @@ export default function SetupScreen({ onComplete }: Props) {
         </form>
 
         <p className="text-gray-400 text-xs text-center mt-6">
-          © 2026 TravanSoft Solutions • v1.0.0
+          © 2026 TechBySoul • v1.0.0 • techbysoul.com
         </p>
       </div>
     </div>

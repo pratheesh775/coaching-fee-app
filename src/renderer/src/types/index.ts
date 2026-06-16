@@ -104,6 +104,24 @@ export interface FeePayment {
   created_at: string
 }
 
+export interface AttendanceStatus {
+  status: 'present' | 'absent' | 'leave' | 'holiday'
+  edit_comment?: string
+}
+
+export interface AttendanceWeek {
+  students: { id: number; name: string; student_id: string }[]
+  dates: string[]
+  records: Record<number, Record<string, string>>
+  holidays: { date: string; name: string }[]
+}
+
+export interface Holiday {
+  id: number
+  date: string
+  name: string
+}
+
 export interface ReportSummary {
   today_total: number
   month_total: number

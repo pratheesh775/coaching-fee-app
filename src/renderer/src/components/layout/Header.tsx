@@ -5,7 +5,7 @@ import type { PageKey } from './AppShell'
 const PAGE_LABELS: Record<PageKey, string> = {
   dashboard: 'Dashboard', students: 'Students', fees: 'Fee Collection',
   reports: 'Reports', courses: 'Courses', batches: 'Batches',
-  subjects: 'Subjects', settings: 'Settings'
+  subjects: 'Subjects', attendance: 'Attendance', settings: 'Settings'
 }
 
 interface Props {

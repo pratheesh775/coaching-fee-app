@@ -55,9 +55,21 @@ const api = {
     dueList: () => ipcRenderer.invoke('reports:due-list'),
     summary: () => ipcRenderer.invoke('reports:summary')
   },
+  attendance: {
+    getWeek: (batchId: number, weekStart: string) => ipcRenderer.invoke('attendance:get-week', batchId, weekStart),
+    mark: (data: unknown) => ipcRenderer.invoke('attendance:mark', data),
+    markAll: (batchId: number, date: string, status: string) => ipcRenderer.invoke('attendance:mark-all', batchId, date, status),
+    report: (batchId: number, fromDate: string, toDate: string) => ipcRenderer.invoke('attendance:report', batchId, fromDate, toDate)
+  },
+  holidays: {
+    list: (fromDate?: string, toDate?: string) => ipcRenderer.invoke('holidays:list', fromDate, toDate),
+    add: (date: string, name: string) => ipcRenderer.invoke('holidays:add', date, name),
+    delete: (date: string) => ipcRenderer.invoke('holidays:delete', date)
+  },
   app: {
     version: () => ipcRenderer.invoke('app:version'),
-    dataPath: () => ipcRenderer.invoke('app:data-path')
+    dataPath: () => ipcRenderer.invoke('app:data-path'),
+    weeklyTrend: () => ipcRenderer.invoke('reports:weekly-trend')
   }
 }
 
