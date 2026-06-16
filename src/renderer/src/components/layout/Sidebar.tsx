@@ -1,13 +1,6 @@
 import {
-  LayoutDashboard,
-  Users,
-  IndianRupee,
-  BarChart3,
-  BookOpen,
-  Clock,
-  Settings,
-  GraduationCap,
-  ChevronLeft
+  LayoutDashboard, Users, IndianRupee, BarChart3,
+  BookOpen, Clock, Settings, GraduationCap, Layers
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import type { PageKey } from './AppShell'
@@ -26,6 +19,7 @@ const NAV: NavItem[] = [
   { key: 'reports', label: 'Reports', icon: <BarChart3 size={18} />, section: 'MANAGEMENT' },
   { key: 'courses', label: 'Courses', icon: <BookOpen size={18} /> },
   { key: 'batches', label: 'Batches', icon: <Clock size={18} /> },
+  { key: 'subjects', label: 'Subjects', icon: <Layers size={18} /> },
   { key: 'settings', label: 'Settings', icon: <Settings size={18} />, section: 'SYSTEM' }
 ]
 
@@ -39,12 +33,7 @@ export default function Sidebar({ activePage, onNavigate, collapsed }: Props) {
   let currentSection = ''
 
   return (
-    <aside
-      className={cn(
-        'flex flex-col bg-navy transition-all duration-200 flex-shrink-0',
-        collapsed ? 'w-16' : 'w-56'
-      )}
-    >
+    <aside className={cn('flex flex-col bg-navy transition-all duration-200 flex-shrink-0', collapsed ? 'w-16' : 'w-56')}>
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-white/10">
         <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
@@ -63,7 +52,6 @@ export default function Sidebar({ activePage, onNavigate, collapsed }: Props) {
         {NAV.map((item) => {
           const showSection = item.section && item.section !== currentSection
           if (item.section) currentSection = item.section
-
           return (
             <div key={item.key}>
               {showSection && !collapsed && (
@@ -87,10 +75,11 @@ export default function Sidebar({ activePage, onNavigate, collapsed }: Props) {
         })}
       </nav>
 
-      {/* Version */}
+      {/* Footer */}
       {!collapsed && (
         <div className="px-5 py-3 border-t border-white/10">
-          <p className="text-white/30 text-xs">v1.0.0 • TravanSoft</p>
+          <p className="text-white/30 text-xs">v1.0.0 · TechBySoul</p>
+          <p className="text-white/20 text-[10px]">techbysoul.com</p>
         </div>
       )}
     </aside>

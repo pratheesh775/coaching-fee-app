@@ -2,11 +2,16 @@ import Database from 'better-sqlite3'
 import { app } from 'electron'
 import { join } from 'path'
 import { mkdirSync } from 'fs'
+import { createHash } from 'crypto'
 
 let db: Database.Database
 
 export function getDb(): Database.Database {
   return db
+}
+
+export function hashPassword(password: string): string {
+  return createHash('sha256').update(`tbs-salt-2024:${password}`).digest('hex')
 }
 
 export function initDatabase(): void {
@@ -23,6 +28,15 @@ export function initDatabase(): void {
 
 function runMigrations(): void {
   db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      security_question TEXT,
+      security_answer_hash TEXT,
+      created_at TEXT DEFAULT (datetime('now','localtime'))
+    );
+
     CREATE TABLE IF NOT EXISTS institute (
       id INTEGER PRIMARY KEY,
       name TEXT NOT NULL,
@@ -30,7 +44,16 @@ function runMigrations(): void {
       phone TEXT,
       email TEXT,
       logo_path TEXT,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT (datetime('now','localtime'))
+    );
+
+    CREATE TABLE IF NOT EXISTS subjects (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      fee_monthly REAL DEFAULT 0,
+      is_active INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now','localtime'))
     );
 
     CREATE TABLE IF NOT EXISTS courses (
@@ -41,7 +64,7 @@ function runMigrations(): void {
       fee_quarterly REAL DEFAULT 0,
       fee_yearly REAL DEFAULT 0,
       is_active INTEGER DEFAULT 1,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT (datetime('now','localtime'))
     );
 
     CREATE TABLE IF NOT EXISTS batches (
@@ -51,8 +74,10 @@ function runMigrations(): void {
       timing TEXT,
       teacher TEXT,
       capacity INTEGER DEFAULT 30,
+      status TEXT DEFAULT 'active',
+      completed_date TEXT,
       is_active INTEGER DEFAULT 1,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT (datetime('now','localtime'))
     );
 
     CREATE TABLE IF NOT EXISTS students (
@@ -69,12 +94,23 @@ function runMigrations(): void {
       batch_id INTEGER REFERENCES batches(id),
       course_id INTEGER REFERENCES courses(id),
       fee_type TEXT DEFAULT 'monthly',
+      fee_structure TEXT DEFAULT 'flat',
       fee_amount REAL DEFAULT 0,
       discount REAL DEFAULT 0,
+      due_date_type TEXT DEFAULT 'joining_date',
+      due_date_day INTEGER DEFAULT 1,
       scholarship TEXT,
       join_date TEXT,
       is_active INTEGER DEFAULT 1,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT (datetime('now','localtime'))
+    );
+
+    CREATE TABLE IF NOT EXISTS student_subjects (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
+      subject_id INTEGER REFERENCES subjects(id),
+      fee_override REAL,
+      UNIQUE(student_id, subject_id)
     );
 
     CREATE TABLE IF NOT EXISTS fee_payments (
@@ -89,7 +125,7 @@ function runMigrations(): void {
       period_to TEXT,
       payment_mode TEXT DEFAULT 'cash',
       notes TEXT,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT (datetime('now','localtime'))
     );
 
     CREATE TABLE IF NOT EXISTS expenses (
@@ -98,7 +134,17 @@ function runMigrations(): void {
       amount REAL NOT NULL,
       category TEXT,
       expense_date TEXT NOT NULL,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT (datetime('now','localtime'))
     );
   `)
+
+  // Safe column additions for existing databases
+  const addCol = (table: string, col: string, def: string) => {
+    try { db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`) } catch { /* already exists */ }
+  }
+  addCol('students', 'fee_structure', "TEXT DEFAULT 'flat'")
+  addCol('students', 'due_date_type', "TEXT DEFAULT 'joining_date'")
+  addCol('students', 'due_date_day', 'INTEGER DEFAULT 1')
+  addCol('batches', 'status', "TEXT DEFAULT 'active'")
+  addCol('batches', 'completed_date', 'TEXT')
 }

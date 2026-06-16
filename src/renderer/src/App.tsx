@@ -1,19 +1,35 @@
 import { useState, useEffect } from 'react'
 import AppShell from './components/layout/AppShell'
 import SetupScreen from './pages/SetupScreen'
+import AuthPage from './pages/AuthPage'
+
+type AppState = 'loading' | 'auth' | 'setup' | 'app'
 
 export default function App() {
-  const [ready, setReady] = useState(false)
-  const [hasInstitute, setHasInstitute] = useState(false)
+  const [state, setState] = useState<AppState>('loading')
+  const [isFirstRun, setIsFirstRun] = useState(false)
+  const [currentUser, setCurrentUser] = useState('')
 
   useEffect(() => {
-    window.api.institute.get().then((data) => {
-      setHasInstitute(!!data?.name)
-      setReady(true)
+    window.api.auth.hasUsers().then((has) => {
+      if (!has) {
+        setIsFirstRun(true)
+        setState('auth')
+      } else {
+        setState('auth')
+      }
     })
   }, [])
 
-  if (!ready) {
+  const handleAuthenticated = async (username: string) => {
+    setCurrentUser(username)
+    const institute = await window.api.institute.get()
+    setState(institute?.name ? 'app' : 'setup')
+  }
+
+  const handleSetupComplete = () => setState('app')
+
+  if (state === 'loading') {
     return (
       <div className="h-full flex items-center justify-center bg-body">
         <div className="flex flex-col items-center gap-3">
@@ -26,9 +42,13 @@ export default function App() {
     )
   }
 
-  if (!hasInstitute) {
-    return <SetupScreen onComplete={() => setHasInstitute(true)} />
+  if (state === 'auth') {
+    return <AuthPage isFirstRun={isFirstRun} onAuthenticated={handleAuthenticated} />
   }
 
-  return <AppShell />
+  if (state === 'setup') {
+    return <SetupScreen onComplete={handleSetupComplete} />
+  }
+
+  return <AppShell currentUser={currentUser} />
 }

@@ -2,14 +2,21 @@ import { useEffect, useState } from 'react'
 import { Users, IndianRupee, TrendingUp, AlertCircle, ArrowUpRight } from 'lucide-react'
 import { formatCurrency, formatDate, today } from '../lib/utils'
 import type { ReportSummary, FeePayment } from '../types'
+import type { PageKey } from '../components/layout/AppShell'
 
-export default function Dashboard() {
+interface Props {
+  onNavigate: (page: PageKey) => void
+}
+
+export default function Dashboard({ onNavigate }: Props) {
   const [summary, setSummary] = useState<ReportSummary | null>(null)
   const [todayPayments, setTodayPayments] = useState<FeePayment[]>([])
+  const [duesCount, setDuesCount] = useState<number | null>(null)
 
   useEffect(() => {
     window.api.reports.summary().then(setSummary)
     window.api.reports.daily(today()).then(setTodayPayments)
+    window.api.students.getDuesList().then((list) => setDuesCount(list.length))
   }, [])
 
   const stats = [
@@ -18,39 +25,42 @@ export default function Dashboard() {
       value: summary?.total_students ?? '—',
       icon: <Users size={20} className="text-blue-500" />,
       bg: 'bg-blue-50',
-      trend: 'Active enrollments'
+      trend: 'Active enrollments',
+      onClick: () => onNavigate('students')
     },
     {
       label: "Today's Collection",
       value: summary ? formatCurrency(summary.today_total) : '—',
       icon: <IndianRupee size={20} className="text-green-500" />,
       bg: 'bg-green-50',
-      trend: `${todayPayments.length} payments`
+      trend: `${todayPayments.length} payments`,
+      onClick: () => onNavigate('fees')
     },
     {
       label: 'Monthly Collection',
       value: summary ? formatCurrency(summary.month_total) : '—',
       icon: <TrendingUp size={20} className="text-purple-500" />,
       bg: 'bg-purple-50',
-      trend: new Date().toLocaleString('default', { month: 'long', year: 'numeric' })
+      trend: new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
+      onClick: () => onNavigate('reports')
     },
     {
       label: 'Pending Dues',
-      value: '—',
+      value: duesCount != null ? `${duesCount} students` : '—',
       icon: <AlertCircle size={20} className="text-orange-500" />,
       bg: 'bg-orange-50',
-      trend: 'Check reports'
+      trend: 'Click to view dues',
+      onClick: () => onNavigate('fees')
     }
   ]
 
   return (
     <div>
-      {/* Page Header */}
       <div className="page-header">
         <div>
           <h1 className="page-title">Dashboard</h1>
           <p className="page-subtitle">
-            Overview of your coaching institute — {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}
+            {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
           </p>
         </div>
       </div>
@@ -58,14 +68,17 @@ export default function Dashboard() {
       {/* Stats Cards */}
       <div className="grid grid-cols-4 gap-4 mb-6">
         {stats.map((s) => (
-          <div key={s.label} className="stat-card">
+          <button key={s.label} className="stat-card text-left hover:shadow-md transition-shadow cursor-pointer" onClick={s.onClick}>
             <div className={`stat-icon ${s.bg}`}>{s.icon}</div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-xs text-gray-500 font-medium">{s.label}</p>
               <p className="text-xl font-bold text-navy mt-0.5">{s.value}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{s.trend}</p>
+              <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                {s.trend}
+                <ArrowUpRight size={11} className="opacity-40" />
+              </p>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -98,23 +111,15 @@ export default function Dashboard() {
               <tbody>
                 {todayPayments.map((p) => (
                   <tr key={p.id}>
-                    <td>
-                      <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
-                        {p.receipt_no}
-                      </span>
-                    </td>
+                    <td><span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">{p.receipt_no}</span></td>
                     <td>
                       <div>
                         <p className="font-medium text-navy">{p.student_name}</p>
                         <p className="text-xs text-gray-400">{p.sid}</p>
                       </div>
                     </td>
-                    <td>
-                      <span className="font-semibold text-success">{formatCurrency(p.total_paid)}</span>
-                    </td>
-                    <td>
-                      <span className="badge badge-info capitalize">{p.payment_mode}</span>
-                    </td>
+                    <td><span className="font-semibold text-success">{formatCurrency(p.total_paid)}</span></td>
+                    <td><span className="badge badge-info capitalize">{p.payment_mode}</span></td>
                     <td className="text-xs text-gray-500">
                       {p.period_from ? `${formatDate(p.period_from)} – ${formatDate(p.period_to ?? '')}` : '—'}
                     </td>
